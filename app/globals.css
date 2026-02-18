@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&display=swap");
+
+:root {
+  --font-dm-serif: "DM Serif Display", Georgia, serif;
+  --font-dm-sans: "DM Sans", system-ui, sans-serif;
+  --radius: 0.5rem;
+
+  /* Design tokens — dark theme */
+  --background: 24 10% 4%;
+  --foreground: 40 30% 92%;
+  --card: 24 8% 7%;
+  --card-foreground: 40 30% 92%;
+  --popover: 24 8% 7%;
+  --popover-foreground: 40 30% 92%;
+  --primary: 38 76% 57%;
+  --primary-foreground: 24 10% 4%;
+  --secondary: 24 8% 12%;
+  --secondary-foreground: 40 20% 75%;
+  --muted: 24 8% 12%;
+  --muted-foreground: 40 10% 55%;
+  --accent: 24 8% 14%;
+  --accent-foreground: 40 30% 92%;
+  --destructive: 0 62% 50%;
+  --destructive-foreground: 40 30% 92%;
+  --border: 24 8% 14%;
+  --input: 24 8% 12%;
+  --ring: 38 76% 57%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-dm-sans);
+  font-feature-settings: "ss01", "ss02";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle grain texture on background */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Ensure content is above grain */
+#__next,
+main {
+  position: relative;
+  z-index: 2;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
