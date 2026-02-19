@@ -31,8 +31,12 @@ export function BookmarkItem({ bookmark, onDelete, isDeleting, isOptimistic }: B
   const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(bookmark.url)}`;
 
   const handleDeleteClick = () => {
-    if (confirmDelete) { onDelete(bookmark.id); }
+    if (confirmDelete) {
+      // console.log("[BookmarkItem] Confirming delete for:", bookmark.id);
+      onDelete(bookmark.id);
+    }
     else {
+      // console.log("[BookmarkItem] First click delete for:", bookmark.id);
       setConfirmDelete(true);
       setTimeout(() => setConfirmDelete(false), 3000);
     }
@@ -95,15 +99,19 @@ export function BookmarkItem({ bookmark, onDelete, isDeleting, isOptimistic }: B
         <div className="flex items-center gap-1">
           {!isOptimistic && !isDeleting && (
             <Button
-              variant={confirmDelete ? "destructive" : "ghost"}
+              variant="ghost"
               size="icon"
-              onClick={handleDeleteClick}
-              className={`h-8 w-8 shrink-0 rounded-lg transition-all
-                ${confirmDelete ? "opacity-100 ring-2 ring-destructive/20" : "opacity-0 group-hover:opacity-100 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"}`}
-              title={confirmDelete ? "Click again to confirm" : "Delete"}
-              aria-label={confirmDelete ? "Confirm delete" : "Delete bookmark"}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // console.log("[BookmarkItem] Immediate delete request for:", bookmark.id);
+                onDelete(bookmark.id);
+              }}
+              className="h-8 w-8 shrink-0 rounded-lg opacity-0 group-hover:opacity-100 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
+              title="Delete bookmark"
+              aria-label="Delete bookmark"
             >
-              <Trash2 className={confirmDelete ? "h-3.5 w-3.5" : "h-4 w-4"} />
+              <Trash2 className="h-4 w-4" />
             </Button>
           )}
           {isDeleting && (

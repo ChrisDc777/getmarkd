@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useOptimistic, useRef, useState } from "react";
+import { useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Bookmark } from "@/types";
 import { BookmarkItem } from "./BookmarkItem";
@@ -26,10 +26,11 @@ function bookmarkReducer(state: Bookmark[], action: OptimisticAction): Bookmark[
 }
 
 export function BookmarkList({ initialBookmarks, userId }: BookmarkListProps) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [bookmarks, setBookmarks]           = useState<Bookmark[]>(initialBookmarks);
   const [optimisticBookmarks, dispatch]     = useOptimistic(bookmarks, bookmarkReducer);
   const [deletingIds, setDeletingIds]       = useState<Set<string>>(new Set());
+  const [isPending, startTransition]        = useTransition();
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   /* ── Realtime subscription ── */
@@ -46,7 +47,7 @@ export function BookmarkList({ initialBookmarks, userId }: BookmarkListProps) {
       )
       .on(
         "postgres_changes",
-        { event: "DELETE", schema: "public", table: "bookmarks", filter: `user_id=eq.${userId}` },
+        { event: "DELETE", schema: "public", table: "bookmarks" },
         (payload) => {
           const delId = payload.old.id as string;
           setBookmarks(prev => prev.filter(b => b.id !== delId));
@@ -63,61 +64,97 @@ export function BookmarkList({ initialBookmarks, userId }: BookmarkListProps) {
     const tempId = `optimistic-${Date.now()}`;
     const opt: Bookmark = { id: tempId, user_id: userId, title, url, created_at: new Date().toISOString() };
 
-    dispatch({ type: "add", bookmark: opt });
+    return new Promise<{ error: string | null }>((resolve) => {
+      startTransition(async () => {
+        dispatch({ type: "add", bookmark: opt });
 
-    const { data, error } = await supabase
-      .from("bookmarks")
-      .insert({ title, url, user_id: userId })
-      .select()
-      .single();
+        const { data, error } = await supabase
+          .from("bookmarks")
+          .insert({ title, url, user_id: userId })
+          .select()
+          .single();
 
-    if (error) {
-      setBookmarks(prev => prev.filter(b => b.id !== tempId));
-      return { error: error.message };
-    }
+        if (error) {
+          setBookmarks(prev => prev.filter(b => b.id !== tempId));
+          resolve({ error: error.message });
+          return;
+        }
 
-    setBookmarks(prev => prev.map(b => b.id === tempId ? (data as Bookmark) : b));
-    return { error: null };
+        setBookmarks(prev => prev.map(b => b.id === tempId ? (data as Bookmark) : b));
+        resolve({ error: null });
+      });
+    });
   };
 
   /* ── Delete ── */
   const handleDelete = async (id: string) => {
+    // console.log("[BookmarkList] Deleting ID:", id);
     setDeletingIds(prev => new Set(prev).add(id));
-    dispatch({ type: "delete", id });
+    
+    startTransition(async () => {
+      dispatch({ type: "delete", id });
 
-    const { error } = await supabase
-      .from("bookmarks").delete().eq("id", id).eq("user_id", userId);
+      try {
+        const { error, data } = await supabase
+          .from("bookmarks")
+          .delete()
+          .eq("id", id)
+          .eq("user_id", userId)
+          .select();
 
-    if (error) {
-      const original = bookmarks.find(b => b.id === id);
-      if (original) {
-        setBookmarks(prev => {
-          if (prev.some(b => b.id === id)) return prev;
-          return [original, ...prev].sort(
-            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
+        if (error) {
+          // console.error("[BookmarkList] Supabase delete error:", error);
+          throw error;
+        }
+
+        if (!data || data.length === 0) {
+          // console.warn("[BookmarkList] No rows deleted. Check RLS or if the record exists.");
+          // Trigger a revert by throwing or just manually resetting
+          throw new Error("No rows deleted");
+        }
+
+        // console.log("[BookmarkList] Delete successful:", data);
+        setBookmarks(prev => prev.filter(b => b.id !== id));
+      } catch (err) {
+        // console.error("[BookmarkList] Deletion failed, reverting UI:", err);
+        const original = bookmarks.find(b => b.id === id);
+        if (original) {
+          setBookmarks(prev => {
+            if (prev.some(b => b.id === id)) return prev;
+            return [original, ...prev].sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+          });
+        }
+      } finally {
+        setDeletingIds(prev => {
+          const n = new Set(prev);
+          n.delete(id);
+          return n;
         });
       }
-    }
-
-    setDeletingIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+    });
   };
+
+  // Filter out items that are currently being deleted to ensure they stay hidden
+  // even if the optimistic transition ends before the base state is updated.
+  const displayBookmarks = optimisticBookmarks.filter(b => !deletingIds.has(b.id));
 
   return (
     <div className="flex flex-col gap-10">
       <AddBookmarkForm onAdd={handleAdd} />
 
-      {optimisticBookmarks.length > 0 && (
+      {displayBookmarks.length > 0 && (
         <div className="space-y-6">
           <div className="flex items-center gap-4">
             <h2 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/50">
-              Saved Bookmarks ({optimisticBookmarks.length})
+              Saved Bookmarks ({displayBookmarks.length})
             </h2>
             <div className="h-px flex-1 bg-border/40" />
           </div>
 
           <ul className="stagger flex flex-col gap-4">
-            {optimisticBookmarks.map(bookmark => (
+            {displayBookmarks.map(bookmark => (
               <li key={bookmark.id}>
                 <BookmarkItem
                   bookmark={bookmark}
@@ -131,7 +168,7 @@ export function BookmarkList({ initialBookmarks, userId }: BookmarkListProps) {
         </div>
       )}
 
-      {optimisticBookmarks.length === 0 && <EmptyState />}
+      {displayBookmarks.length === 0 && <EmptyState />}
     </div>
   );
 }
