@@ -43,6 +43,7 @@ export function BookmarkList({ initialBookmarks, userId }: BookmarkListProps) {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "bookmarks", filter: `user_id=eq.${userId}` },
         (payload) => {
+          console.log("[Realtime] INSERT received:", payload);
           const nb = payload.new as Bookmark;
           setBookmarks(prev => prev.some(b => b.id === nb.id) ? prev : [nb, ...prev]);
         }
@@ -51,11 +52,14 @@ export function BookmarkList({ initialBookmarks, userId }: BookmarkListProps) {
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "bookmarks" },
         (payload) => {
+          console.log("[Realtime] DELETE received:", payload);
           const delId = payload.old.id as string;
           setBookmarks(prev => prev.filter(b => b.id !== delId));
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("[Realtime] Subscription status:", status);
+      });
 
     channelRef.current = channel;
     return () => { supabase.removeChannel(channel); };

@@ -28,7 +28,12 @@ import { Card } from "@/components/ui/card";
 export function BookmarkItem({ bookmark, onDelete, isDeleting, isOptimistic }: BookmarkItemProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const domain     = getDomain(bookmark.url);
-  const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(bookmark.url)}`;
+  const isLocal    = bookmark.url.toLowerCase().includes("localhost") || 
+                     bookmark.url.includes("127.0.0.1") ||
+                     bookmark.url.startsWith("/");
+  const faviconUrl = isLocal
+    ? `https://www.google.com/s2/favicons?sz=64&domain_url=https://supabase.com` // Fallback for local
+    : `https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent(bookmark.url)}`;
 
   const handleDeleteClick = () => {
     if (confirmDelete) {
