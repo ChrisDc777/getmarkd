@@ -2,165 +2,109 @@
 
 import { useState, useTransition } from "react";
 import { Link2, Plus, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface AddBookmarkFormProps {
-  onAdd: (
-    title: string,
-    url: string
-  ) => Promise<{ error: string | null }>;
+  onAdd: (title: string, url: string) => Promise<{ error: string | null }>;
 }
 
 function normalizeUrl(raw: string): string {
-  const trimmed = raw.trim();
-  if (!trimmed) return trimmed;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `https://${trimmed}`;
+  const t = raw.trim();
+  if (!t) return t;
+  if (/^https?:\/\//i.test(t)) return t;
+  return `https://${t}`;
 }
 
 function isValidUrl(url: string): boolean {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
+  try { new URL(url); return true; } catch { return false; }
 }
 
 export function AddBookmarkForm({ onAdd }: AddBookmarkFormProps) {
-  const [title, setTitle] = useState("");
-  const [url, setUrl] = useState("");
-  const [errors, setErrors] = useState<{ title?: string; url?: string }>({});
+  const [title, setTitle]       = useState("");
+  const [url, setUrl]           = useState("");
+  const [errors, setErrors]     = useState<{ title?: string; url?: string }>({});
   const [apiError, setApiError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, start]      = useTransition();
 
   const validate = () => {
-    const newErrors: { title?: string; url?: string } = {};
-    if (!title.trim()) newErrors.title = "Title is required";
-    const normalized = normalizeUrl(url);
-    if (!normalized) {
-      newErrors.url = "URL is required";
-    } else if (!isValidUrl(normalized)) {
-      newErrors.url = "Please enter a valid URL";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e: { title?: string; url?: string } = {};
+    if (!title.trim()) e.title = "Required";
+    const n = normalizeUrl(url);
+    if (!n) e.url = "Required";
+    else if (!isValidUrl(n)) e.url = "Enter a valid URL";
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (ev: React.FormEvent) => {
+    ev.preventDefault();
     setApiError(null);
     if (!validate()) return;
 
-    const normalizedUrl = normalizeUrl(url);
-
-    startTransition(async () => {
-      const { error } = await onAdd(title.trim(), normalizedUrl);
-      if (error) {
-        setApiError(error);
-      } else {
-        setTitle("");
-        setUrl("");
-        setErrors({});
-      }
+    start(async () => {
+      const { error } = await onAdd(title.trim(), normalizeUrl(url));
+      if (error) { setApiError(error); }
+      else { setTitle(""); setUrl(""); setErrors({}); }
     });
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-2xl border border-cream/10 bg-ink-50 p-5 shadow-lg"
-      noValidate
-    >
-      <div className="mb-4 flex items-center gap-2">
-        <Plus className="h-4 w-4 text-amber-accent" />
-        <h2
-          className="font-serif text-lg text-cream"
-          style={{ fontFamily: "var(--font-dm-serif)" }}
-        >
-          Add bookmark
-        </h2>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        {/* Title */}
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="title"
-            className="text-xs font-medium uppercase tracking-wider text-cream-dim"
-          >
-            Title
-          </label>
-          <input
-            id="title"
-            type="text"
-            value={title}
-            onChange={(e) => {
-              setTitle(e.target.value);
-              if (errors.title) setErrors((p) => ({ ...p, title: undefined }));
-            }}
-            placeholder="e.g. Supabase Docs"
-            disabled={isPending}
-            className={`w-full rounded-lg border bg-ink-100 px-3.5 py-2.5 text-sm text-cream placeholder:text-cream-dim/40 transition-colors focus:border-amber-accent/50 focus:outline-none focus:ring-1 focus:ring-amber-accent/30 disabled:opacity-50 ${
-              errors.title ? "border-red-500/60" : "border-cream/10"
-            }`}
-          />
-          {errors.title && (
-            <p className="text-xs text-red-400">{errors.title}</p>
-          )}
-        </div>
-
-        {/* URL */}
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="url"
-            className="text-xs font-medium uppercase tracking-wider text-cream-dim"
-          >
-            URL
-          </label>
-          <div className="relative">
-            <Link2 className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-cream-dim/40" />
-            <input
-              id="url"
-              type="url"
-              value={url}
-              onChange={(e) => {
-                setUrl(e.target.value);
-                if (errors.url) setErrors((p) => ({ ...p, url: undefined }));
-              }}
-              placeholder="https://example.com"
+    <Card className="overflow-hidden border-border/50 bg-card/30 backdrop-blur-sm">
+      <CardContent className="p-0">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col sm:flex-row items-end gap-3 p-4">
+          <div className="grid w-full gap-1.5 flex-[2]">
+            <Label htmlFor="bm-title" className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-bold ml-1">Title</Label>
+            <Input
+              id="bm-title"
+              value={title}
+              onChange={e => { setTitle(e.target.value); setErrors(p => ({...p, title: undefined})); }}
+              placeholder="e.g. Supabase Docs"
               disabled={isPending}
-              className={`w-full rounded-lg border bg-ink-100 py-2.5 pl-9 pr-3.5 text-sm text-cream placeholder:text-cream-dim/40 transition-colors focus:border-amber-accent/50 focus:outline-none focus:ring-1 focus:ring-amber-accent/30 disabled:opacity-50 ${
-                errors.url ? "border-red-500/60" : "border-cream/10"
+              className={`h-9 bg-background/50 border-border/40 focus:border-primary/30 transition-all ${
+                errors.title ? "border-destructive/50 ring-destructive/20" : ""
               }`}
             />
           </div>
-          {errors.url && <p className="text-xs text-red-400">{errors.url}</p>}
-        </div>
 
-        {apiError && (
-          <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
-            {apiError}
-          </p>
+          <div className="grid w-full gap-1.5 flex-[3]">
+            <Label htmlFor="bm-url" className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-bold ml-1">URL</Label>
+            <div className="relative">
+              <Link2 className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/40 pointer-events-none" />
+              <Input
+                id="bm-url"
+                type="url"
+                value={url}
+                onChange={e => { setUrl(e.target.value); setErrors(p => ({...p, url: undefined})); }}
+                placeholder="https://example.com"
+                disabled={isPending}
+                className={`h-9 pl-8 bg-background/50 border-border/40 focus:border-primary/30 transition-all ${
+                  errors.url ? "border-destructive/50 ring-destructive/20" : ""
+                }`}
+              />
+            </div>
+          </div>
+
+          <Button type="submit" disabled={isPending} size="sm" className="h-9 px-4 gap-2 font-medium">
+            {isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Plus className="h-3.5 w-3.5" />
+            )}
+            Add
+          </Button>
+        </form>
+
+        {(errors.title || errors.url || apiError) && (
+          <div className="border-t border-border/40 bg-destructive/5 px-4 py-2 flex items-center gap-2">
+            <span className="text-[11px] font-medium text-destructive">
+              {errors.title || errors.url || apiError}
+            </span>
+          </div>
         )}
-
-        <button
-          type="submit"
-          disabled={isPending}
-          className="mt-1 flex items-center justify-center gap-2 rounded-xl bg-amber-accent px-4 py-2.5 text-sm font-medium text-ink transition-all duration-150 hover:bg-amber-soft active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Saving…
-            </>
-          ) : (
-            <>
-              <Plus className="h-4 w-4" />
-              Save bookmark
-            </>
-          )}
-        </button>
-      </div>
-    </form>
+      </CardContent>
+    </Card>
   );
 }
