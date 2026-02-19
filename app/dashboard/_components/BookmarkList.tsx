@@ -82,7 +82,11 @@ export function BookmarkList({ initialBookmarks, userId }: BookmarkListProps) {
           return;
         }
 
-        setBookmarks(prev => prev.map(b => b.id === tempId ? (data as Bookmark) : b));
+        setBookmarks(prev => {
+          const exists = prev.some(b => b.id === (data as Bookmark).id);
+          if (exists) return prev;
+          return [data as Bookmark, ...prev];
+        });
         resolve({ error: null });
       });
     });
