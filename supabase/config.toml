@@ -2,5 +2,5 @@
 enabled = true
 client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"
-redirect_uri = "http://localhost:3000/auth/v1/callback"
+redirect_uri = "env(REDIRECT_URI)/auth/v1/callback"
 skip_nonce_check = false

@@ -87,7 +87,7 @@ export default async function LoginPage() {
             Built with Passion
           </p>
           <div className="flex items-center gap-3 text-[10px] text-muted-foreground/30">
-            <span>Next.js 14</span>
+            <span>Next.js 15</span>
             <span className="h-1 w-1 rounded-full bg-border" />
             <span>Supabase</span>
             <span className="h-1 w-1 rounded-full bg-border" />
