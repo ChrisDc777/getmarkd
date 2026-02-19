@@ -43,13 +43,11 @@ export function BookmarkList({ initialBookmarks, userId }: BookmarkListProps) {
         "postgres_changes",
         { event: "*", schema: "public", table: "bookmarks" },
         (payload) => {
-          console.log("[Realtime] Event received:", payload.eventType, payload);
+          console.log("[Realtime] RAW EVENT:", payload);
           
           if (payload.eventType === "INSERT") {
             const nb = payload.new as Bookmark;
-            if (nb.user_id === userId) {
-              setBookmarks(prev => prev.some(b => b.id === nb.id) ? prev : [nb, ...prev]);
-            }
+            setBookmarks(prev => prev.some(b => b.id === nb.id) ? prev : [nb, ...prev]);
           } else if (payload.eventType === "DELETE") {
             const delId = payload.old.id as string;
             setBookmarks(prev => prev.filter(b => b.id !== delId));
