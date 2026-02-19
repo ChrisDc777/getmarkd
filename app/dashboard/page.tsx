@@ -28,7 +28,7 @@ export default async function DashboardPage() {
     <div className="min-h-screen">
       <Header user={user} />
 
-      <main className="mx-auto max-w-3xl px-6 pb-24 pt-16">
+      <main className="mx-auto max-w-7xl px-6 pb-24 pt-16">
         {/* Page title row */}
         <div className="mb-12 flex flex-col gap-2 items-center text-center animate-fade-in">
           <div className="inline-flex items-center justify-center rounded-2xl bg-primary/5 p-3 mb-4">

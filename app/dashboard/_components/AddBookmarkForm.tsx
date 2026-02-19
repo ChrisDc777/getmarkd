@@ -52,7 +52,7 @@ export function AddBookmarkForm({ onAdd }: AddBookmarkFormProps) {
   };
 
   return (
-    <Card className="overflow-hidden border-border/50 bg-card/30 backdrop-blur-sm">
+    <Card className="max-w-xl mx-auto w-full overflow-hidden border-border/50 bg-card/30 backdrop-blur-sm">
       <CardContent className="p-0">
         <form onSubmit={handleSubmit} noValidate className="flex flex-col sm:flex-row items-end gap-3 p-4">
           <div className="grid w-full gap-1.5 flex-[2]">

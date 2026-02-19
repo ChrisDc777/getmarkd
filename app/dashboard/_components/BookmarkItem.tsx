@@ -44,59 +44,25 @@ export function BookmarkItem({ bookmark, onDelete, isDeleting, isOptimistic }: B
 
   return (
     <Card
-      className={`group relative overflow-hidden transition-all duration-300 hover:shadow-md
+      className={`group relative flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 rounded-2xl
         ${isDeleting || isOptimistic
           ? "border-border/40 opacity-50"
-          : "border-border/50 bg-card/40 hover:border-primary/20 hover:bg-card/60"
+          : "border-border/40 bg-card/30 hover:border-primary/20 hover:bg-card/50"
         }`}
     >
-      <div className="flex items-center gap-4 p-4">
-        {/* Favicon / Icon Area */}
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-background/50 transition-colors group-hover:bg-background">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={faviconUrl}
-            alt=""
-            className="h-5 w-5 grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-          />
-        </div>
-
-        {/* Content */}
-        <div className="min-w-0 flex-1">
-          <a
-            href={bookmark.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group/link block"
-            tabIndex={isOptimistic ? -1 : 0}
-          >
-            <div className="flex items-center gap-1.5">
-              <span className="truncate text-sm font-semibold tracking-tight text-foreground/90 transition-colors group-hover/link:text-primary">
-                {bookmark.title}
-              </span>
-              <ExternalLink className="h-3 w-3 shrink-0 opacity-0 -translate-y-0.5 translate-x-1 group-hover/link:opacity-40 group-hover/link:translate-x-0 group-hover/link:translate-y-0 transition-all font-bold" />
-            </div>
-          </a>
-
-          <div className="mt-1 flex items-center gap-2">
-            <span className="truncate text-[11px] font-medium text-muted-foreground/60 uppercase tracking-widest">{domain}</span>
-            {!isOptimistic && (
-              <>
-                <span className="h-0.5 w-0.5 rounded-full bg-muted-foreground/30" />
-                <span className="shrink-0 text-[11px] text-muted-foreground/40 font-medium">
-                  {formatDate(bookmark.created_at)}
-                </span>
-              </>
-            )}
-            {isOptimistic && (
-              <span className="text-[11px] text-muted-foreground/40 italic">Saving…</span>
-            )}
+      <div className="flex flex-col h-full p-5">
+        <div className="flex items-start justify-between mb-4">
+          {/* Favicon / Icon Area */}
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-background/50 transition-colors group-hover:bg-background shadow-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={faviconUrl}
+              alt=""
+              className="h-5 w-5 grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
           </div>
-        </div>
 
-        {/* Delete Action */}
-        <div className="flex items-center gap-1">
           {!isOptimistic && !isDeleting && (
             <Button
               variant="ghost"
@@ -104,12 +70,10 @@ export function BookmarkItem({ bookmark, onDelete, isDeleting, isOptimistic }: B
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                // console.log("[BookmarkItem] Immediate delete request for:", bookmark.id);
                 onDelete(bookmark.id);
               }}
               className="h-8 w-8 shrink-0 rounded-lg opacity-0 group-hover:opacity-100 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
               title="Delete bookmark"
-              aria-label="Delete bookmark"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -117,6 +81,37 @@ export function BookmarkItem({ bookmark, onDelete, isDeleting, isOptimistic }: B
           {isDeleting && (
             <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground/40" />
           )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 flex flex-col">
+          <a
+            href={bookmark.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group/link block mb-2"
+            tabIndex={isOptimistic ? -1 : 0}
+          >
+            <div className="flex items-start gap-1 justify-between">
+              <span className="text-sm font-bold leading-tight tracking-tight text-foreground/90 transition-colors group-hover/link:text-primary line-clamp-2">
+                {bookmark.title}
+              </span>
+              <ExternalLink className="h-3 w-3 mt-0.5 shrink-0 opacity-0 group-hover/link:opacity-40 transition-all" />
+            </div>
+          </a>
+
+          <div className="mt-auto pt-4 flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className="truncate text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.15em]">{domain}</span>
+            </div>
+            {!isOptimistic ? (
+              <span className="text-[10px] text-muted-foreground/30 font-medium">
+                {formatDate(bookmark.created_at)}
+              </span>
+            ) : (
+              <span className="text-[10px] text-muted-foreground/30 italic">Saving…</span>
+            )}
+          </div>
         </div>
       </div>
     </Card>

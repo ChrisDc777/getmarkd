@@ -62,7 +62,6 @@ export function Header({ user }: HeaderProps) {
               <span className="max-w-[140px] truncate text-[11px] font-semibold text-foreground/80">
                 {displayName}
               </span>
-              <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">Pro Account</span>
             </div>
           </div>
 
