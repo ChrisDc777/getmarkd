@@ -41,10 +41,11 @@ export function BookmarkList({ initialBookmarks, userId }: BookmarkListProps) {
       .channel("bookmarks-realtime")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "bookmarks", filter: `user_id=eq.${userId}` },
+        { event: "INSERT", schema: "public", table: "bookmarks" },
         (payload) => {
           console.log("[Realtime] INSERT received:", payload);
           const nb = payload.new as Bookmark;
+          if (nb.user_id !== userId) return;
           setBookmarks(prev => prev.some(b => b.id === nb.id) ? prev : [nb, ...prev]);
         }
       )
