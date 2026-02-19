@@ -37,29 +37,40 @@ export function BookmarkList({ initialBookmarks, userId }: BookmarkListProps) {
 
   /* ── Realtime subscription ── */
   useEffect(() => {
-    const channel = supabase
-      .channel("bookmarks-realtime")
+    // Channel 1: postgres_changes for DELETE (works reliably)
+    const pgChannel = supabase
+      .channel("bookmarks-pg-changes")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "bookmarks" },
+        { event: "DELETE", schema: "public", table: "bookmarks" },
         (payload) => {
-          console.log("[Realtime] RAW EVENT:", payload);
-          
-          if (payload.eventType === "INSERT") {
-            const nb = payload.new as Bookmark;
-            setBookmarks(prev => prev.some(b => b.id === nb.id) ? prev : [nb, ...prev]);
-          } else if (payload.eventType === "DELETE") {
-            const delId = payload.old.id as string;
-            setBookmarks(prev => prev.filter(b => b.id !== delId));
-          }
+          console.log("[Realtime] DELETE event:", payload);
+          const delId = payload.old.id as string;
+          setBookmarks(prev => prev.filter(b => b.id !== delId));
         }
       )
       .subscribe((status) => {
-        console.log("[Realtime] Subscription status:", status, "User:", userId);
+        console.log("[Realtime] PG channel status:", status);
       });
 
-    channelRef.current = channel;
-    return () => { supabase.removeChannel(channel); };
+    // Channel 2: Broadcast for INSERT sync across tabs
+    const broadcastChannel = supabase
+      .channel("bookmarks-broadcast")
+      .on("broadcast", { event: "new-bookmark" }, (payload) => {
+        console.log("[Broadcast] New bookmark received:", payload);
+        const nb = payload.payload as Bookmark;
+        if (nb.user_id !== userId) return;
+        setBookmarks(prev => prev.some(b => b.id === nb.id) ? prev : [nb, ...prev]);
+      })
+      .subscribe((status) => {
+        console.log("[Broadcast] Channel status:", status);
+      });
+
+    channelRef.current = pgChannel;
+    return () => {
+      supabase.removeChannel(pgChannel);
+      supabase.removeChannel(broadcastChannel);
+    };
   }, [supabase, userId]);
 
   /* ── Add ── */
@@ -83,11 +94,22 @@ export function BookmarkList({ initialBookmarks, userId }: BookmarkListProps) {
           return;
         }
 
+        const newBookmark = data as Bookmark;
+
+        // Update local state
         setBookmarks(prev => {
-          const exists = prev.some(b => b.id === (data as Bookmark).id);
+          const exists = prev.some(b => b.id === newBookmark.id);
           if (exists) return prev;
-          return [data as Bookmark, ...prev];
+          return [newBookmark, ...prev];
         });
+
+        // Broadcast to other tabs
+        supabase.channel("bookmarks-broadcast").send({
+          type: "broadcast",
+          event: "new-bookmark",
+          payload: newBookmark,
+        });
+
         resolve({ error: null });
       });
     });
