@@ -3,11 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import type { Bookmark } from "@/types";
 import { BookmarkList } from "./_components/BookmarkList";
 import { Header } from "./_components/Header";
+import { Badge } from "@/components/ui/badge";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  // Verify session server-side (never trust client alone)
   const {
     data: { user },
     error: userError,
@@ -15,39 +15,30 @@ export default async function DashboardPage() {
 
   if (userError || !user) redirect("/login");
 
-  // Fetch initial bookmarks — RLS guarantees only this user's rows
   const { data: bookmarks, error: bookmarksError } = await supabase
     .from("bookmarks")
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (bookmarksError) {
-    console.error("Error fetching bookmarks:", bookmarksError);
-  }
+  if (bookmarksError) console.error("Error fetching bookmarks:", bookmarksError);
+
+  const count = (bookmarks ?? []).length;
 
   return (
-    <div className="relative min-h-screen">
-      {/* Background glow */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed right-0 top-0 h-[500px] w-[500px] rounded-full bg-amber-accent/4 blur-[140px]"
-      />
-
+    <div className="min-h-screen">
       <Header user={user} />
 
-      <main className="relative z-10 mx-auto max-w-3xl px-4 pb-20 pt-8">
-        {/* Page heading */}
-        <div className="mb-10 animate-fade-in">
-          <h1
-            className="font-serif text-4xl text-cream"
-            style={{ fontFamily: "var(--font-dm-serif)" }}
-          >
-            Your Bookmarks
+      <main className="mx-auto max-w-3xl px-6 pb-24 pt-16">
+        {/* Page title row */}
+        <div className="mb-12 flex flex-col gap-2 items-center text-center animate-fade-in">
+          <div className="inline-flex items-center justify-center rounded-2xl bg-primary/5 p-3 mb-4">
+            <span className="text-3xl">🔖</span>
+          </div>
+          <h1 className="text-3xl font-serif font-bold text-foreground tracking-tight" style={{ fontFamily: "var(--font-dm-serif)" }}>
+            Your Library
           </h1>
-          <p className="mt-1.5 text-sm text-cream-dim">
-            {(bookmarks ?? []).length === 0
-              ? "Nothing saved yet — add your first link below."
-              : `${(bookmarks ?? []).length} saved link${(bookmarks ?? []).length === 1 ? "" : "s"}`}
+          <p className="text-muted-foreground max-w-sm text-sm">
+            A private collection of your favorite links and resources, saved forever.
           </p>
         </div>
 

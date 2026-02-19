@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { User } from "@/types";
 import Image from "next/image";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 interface HeaderProps {
   user: User;
@@ -33,13 +36,15 @@ export function Header({ user }: HeaderProps) {
     .slice(0, 2);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-cream/8 bg-ink/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3.5">
+    <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-3">
         {/* Logo */}
         <div className="flex items-center gap-2.5">
-          <span className="text-xl">🔖</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/5 text-lg">
+            🔖
+          </div>
           <span
-            className="font-serif text-xl text-cream"
+            className="font-serif text-xl font-bold text-foreground tracking-tight"
             style={{ fontFamily: "var(--font-dm-serif)" }}
           >
             Markd
@@ -47,36 +52,31 @@ export function Header({ user }: HeaderProps) {
         </div>
 
         {/* User section */}
-        <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-2 sm:flex">
-            {avatarUrl ? (
-              <div className="relative h-7 w-7 overflow-hidden rounded-full border border-cream/15">
-                <Image
-                  src={avatarUrl}
-                  alt={displayName}
-                  fill
-                  className="object-cover"
-                  sizes="28px"
-                />
-              </div>
-            ) : (
-              <div className="flex h-7 w-7 items-center justify-center rounded-full border border-cream/15 bg-ink-50 text-xs font-medium text-cream-muted">
-                {initials}
-              </div>
-            )}
-            <span className="max-w-[140px] truncate text-xs text-cream-dim">
-              {displayName}
-            </span>
+        <div className="flex items-center gap-4">
+          <div className="hidden items-center gap-2.5 sm:flex">
+            <Avatar className="h-8 w-8 border border-border/50">
+              <AvatarImage src={avatarUrl} alt={displayName} />
+              <AvatarFallback className="text-[10px] bg-muted/50 text-muted-foreground uppercase">{initials}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col -gap-0.5">
+              <span className="max-w-[140px] truncate text-[11px] font-semibold text-foreground/80">
+                {displayName}
+              </span>
+              <span className="text-[9px] text-muted-foreground uppercase tracking-wider font-bold">Pro Account</span>
+            </div>
           </div>
 
-          <div className="h-4 w-px bg-cream/10" aria-hidden="true" />
+          <div className="h-4 w-px bg-border/40" aria-hidden="true" />
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleSignOut}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-cream-dim transition-colors hover:bg-accent hover:text-cream"
+            className="h-8 gap-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all font-medium"
           >
-            Sign out
-          </button>
+            <LogOut className="h-3.5 w-3.5" />
+            <span>Sign out</span>
+          </Button>
         </div>
       </div>
     </header>
