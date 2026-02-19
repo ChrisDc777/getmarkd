@@ -41,25 +41,23 @@ export function BookmarkList({ initialBookmarks, userId }: BookmarkListProps) {
       .channel("bookmarks-realtime")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "bookmarks" },
+        { event: "*", schema: "public", table: "bookmarks" },
         (payload) => {
-          console.log("[Realtime] INSERT received:", payload);
-          const nb = payload.new as Bookmark;
-          if (nb.user_id !== userId) return;
-          setBookmarks(prev => prev.some(b => b.id === nb.id) ? prev : [nb, ...prev]);
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "bookmarks" },
-        (payload) => {
-          console.log("[Realtime] DELETE received:", payload);
-          const delId = payload.old.id as string;
-          setBookmarks(prev => prev.filter(b => b.id !== delId));
+          console.log("[Realtime] Event received:", payload.eventType, payload);
+          
+          if (payload.eventType === "INSERT") {
+            const nb = payload.new as Bookmark;
+            if (nb.user_id === userId) {
+              setBookmarks(prev => prev.some(b => b.id === nb.id) ? prev : [nb, ...prev]);
+            }
+          } else if (payload.eventType === "DELETE") {
+            const delId = payload.old.id as string;
+            setBookmarks(prev => prev.filter(b => b.id !== delId));
+          }
         }
       )
       .subscribe((status) => {
-        console.log("[Realtime] Subscription status:", status);
+        console.log("[Realtime] Subscription status:", status, "User:", userId);
       });
 
     channelRef.current = channel;
